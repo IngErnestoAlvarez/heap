@@ -11,17 +11,30 @@ struct heap{
     cmp_func_t cmp;
 };
 /**********************************************/
+/* FUNCIONES AUXILIARES */
+/*********************************************/
+void swap(void** a, void** b){
+    void* aux = *a;
+    *a = *b;
+    *b = aux;
+}
+void heapify(void* arreglo, size_t n, cmp_func_t cmp){
+    for(int i = 0; i<n; i++){
+        downheap(arreglo, n-i-1, cmp);
+    }
+}
+
+bool downheap(void* arreglo, size_t pos, cmp_func_t cmp);
+
+bool upheap(void* arreglo, size_t pos, cmp_func_t cmp);
+
+/**********************************************/
 /* HEAP_SORT */
 /*********************************************/
 
 void heap_sort(void *elementos[], size_t cant, cmp_func_t cmp){
 
 }
-
-/**********************************************/
-/* FUNCIONES AUXILIARES */
-/*********************************************/
-bool heapify(void* arreglo, size_t n, cmp_func_t cmp);
 
 /**********************************************/
 /* FUNCIONES HEAP */
@@ -71,4 +84,9 @@ bool heap_encolar(heap_t *heap, void *elem);
 
 void *heap_desencolar(heap_t *heap);
 
-void heap_destruir(heap_t *heap, void destruir_elemento(void *e));
+void heap_destruir(heap_t *heap, void destruir_elemento(void *e)){
+    //?Esto es si en la funcion heap_crear_arr se crea un duplicado del arreglo
+    for(int i = 0; i < heap->cant; i++) destruir_elemento(heap->array[i]);
+    free(heap->array);
+    free(heap);
+}
