@@ -19,18 +19,49 @@ void swap(void** a, void** b){
     *b = aux;
 }
 
-bool heap_redimensionar(heap_t* heap, size_t nuevo_tam);
+bool heap_redimensionar(heap_t* heap, size_t nuevo){
+    void** aux = realloc(heap->array, sizeof(void*) * nuevo);
+    if(!aux) return false;
+    heap->array = aux;
+    heap->cap = nuevo;
+    return true;
+}
+
+void downheap(void** arreglo, size_t cant, size_t pos, cmp_func_t cmp){
+	size_t hijo_izq = (2 * pos) + 1;
+	size_t hijo_der = (2 * pos) + 2;
+	if((hijo_izq >= cant)) return;
+	if(hijo_der >= cant){
+		if(cmp(arreglo[pos], arreglo[hijo_izq]) < 0){
+			swap(&arreglo[pos], &arreglo[hijo_izq]);
+		}
+		return;
+	}
+	size_t hijo_mayor = 0;
+	if(cmp(arreglo[hijo_der], arreglo[hijo_izq]) > 0) hijo_mayor = hijo_der;
+	else hijo_mayor = hijo_izq;
+	if(cmp(arreglo[hijo_mayor], arreglo[pos]) > 0){
+		swap(&arreglo[hijo_mayor], &arreglo[pos]);
+		downheap(arreglo, cant, hijo_mayor, cmp);
+	}
+	return;
+}
+
+void upheap(void** arreglo, size_t pos, cmp_func_t cmp){
+	if(!pos) return;
+	size_t padre = (pos - 1)/2;
+	if(cmp(arreglo[pos], arreglo[padre])>0){
+		swap(&arreglo[pos], &arreglo[padre]);
+		upheap(arreglo, padre, cmp);
+	}
+	return;
+}
 
 void heapify(void* arreglo, size_t n, cmp_func_t cmp){
     for(int i = 0; i<n; i++){
         downheap(arreglo,n, n-i-1, cmp);
     }
 }
-
-bool downheap(void* arreglo, size_t cant, size_t pos, cmp_func_t cmp);
-
-bool upheap(void* arreglo, size_t pos, cmp_func_t cmp);
-
 /**********************************************/
 /* HEAP_SORT */
 /*********************************************/
@@ -39,7 +70,7 @@ void heap_sort(void *elementos[], size_t cant, cmp_func_t cmp){
     heapify(elementos, cant, cmp);
     for(int i = 0; i < cant; i++){
         swap(&elementos[0], &elementos[cant-i-1]);
-        downheap(elementos, cant-i, 0, cmp);
+        downheap(elementos, cant-i-1, 0, cmp);
     }
 }
 
@@ -94,26 +125,32 @@ void *heap_ver_max(const heap_t *heap){
 }
 
 bool heap_encolar(heap_t *heap, void *elem){
+	if(heap_esta_vacio(heap)){
+		heap->array[0] = elem;
+		heap->cant++;
+		return true;
+	}
     if(heap->cant == heap->cap){
         if(!heap_redimensionar(heap, heap->cap*2)) return false;
     }
     heap->array[heap->cant] = elem;
     upheap(heap->array, heap->cant, heap->cmp);
     heap->cant++;
+	return true;
 }
 
 void *heap_desencolar(heap_t *heap){
     if(heap_esta_vacio(heap)) return NULL;
     heap->cant--;
     if((heap->cant == (heap->cap)/4)&&(heap->cap > TAM_MIN)) heap_redimensionar(heap, heap->cap/2);
-    swap(heap->array[0], heap->array[heap->cant]);
+    swap(&heap->array[0], &heap->array[heap->cant]);
     downheap(heap->array, heap->cant, 0, heap->cmp);
     return heap->array[heap->cant];
 }
 
 void heap_destruir(heap_t *heap, void destruir_elemento(void *e)){
     //?Esto es si en la funcion heap_crear_arr se crea un duplicado del arreglo
-    for(int i = 0; i < heap->cant; i++) destruir_elemento(heap->array[i]);
+    for(int i = 0; i < heap->cant; i++) if(destruir_elemento) destruir_elemento(heap->array[i]);
     free(heap->array);
     free(heap);
 }
